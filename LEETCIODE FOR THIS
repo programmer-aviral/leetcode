@@ -1,0 +1,77 @@
+#include <iostream>
+#include <string>
+#include <vector>
+#include <algorithm>
+
+using namespace std;
+
+class Solution {
+public:
+    static const long long LIMIT = 1000001LL;
+
+    // Helper to compute multinomial combinations capped at LIMIT
+    long long countWays(const vector<int>& cnt, int total) {
+        long long res = 1;
+        int remaining = total;
+
+        for (int i = 0; i < 26; i++) {
+            int c = cnt[i];
+            for (int j = 1; j <= c; j++) {
+                res = res * (remaining - c + j) / j;
+                if (res > LIMIT) return LIMIT;
+            }
+            remaining -= c;
+        }
+        return min(res, LIMIT);
+    }
+
+    string smallestPalindrome(string s, int k) {
+        vector<int> freq(26, 0);
+        for (char c : s) {
+            freq[c - 'a']++;
+        }
+
+        string mid = "";
+        vector<int> half(26, 0);
+        int len = 0;
+
+        for (int i = 0; i < 26; i++) {
+            if (freq[i] & 1) {
+                mid.push_back(char('a' + i));
+            }
+            half[i] = freq[i] / 2;
+            len += half[i];
+        }
+
+        // Check if k exceeds total valid permutations
+        if (countWays(half, len) < k) {
+            return "";
+        }
+
+        string left = "";
+
+        // Construct the left half character by character
+        for (int pos = 0; pos < len; pos++) {
+            for (int c = 0; c < 26; c++) {
+                if (half[c] == 0) continue;
+
+                half[c]--;
+                int remainingLen = len - pos - 1;
+                long long ways = countWays(half, remainingLen);
+
+                if (ways >= k) {
+                    left.push_back(char('a' + c));
+                    break; // Keep this character choice
+                }
+
+                k -= ways;
+                half[c]++; // Backtrack and try next character
+            }
+        }
+
+        string right = left;
+        reverse(right.begin(), right.end());
+
+        return left + mid + right;
+    }
+};
