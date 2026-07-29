@@ -1,0 +1,40 @@
+class Solution(object):
+    def minSwaps(self, grid):
+        n = len(grid)
+        
+        # Step 1: Count trailing zeros for each row
+        trailing_zeros = []
+        for row in grid:
+            zeros = 0
+            for val in reversed(row):
+                if val == 0:
+                    zeros += 1
+                else:
+                    break
+            trailing_zeros.append(zeros)
+            
+        ans = 0
+        
+        # Step 2: Greedy search and shift
+        for i in range(n):
+            needed_zeros = n - 1 - i
+            target_idx = -1
+            
+            # Find the first row at or after index i with enough trailing zeros
+            for j in range(i, n):
+                if trailing_zeros[j] >= needed_zeros:
+                    target_idx = j
+                    break
+            
+            # If no suitable row found, grid cannot be arranged
+            if target_idx == -1:
+                return -1
+            
+            # Count steps to bubble up the row to index i
+            ans += target_idx - i
+            
+            # Shift the element in our tracking list
+            val = trailing_zeros.pop(target_idx)
+            trailing_zeros.insert(i, val)
+            
+        return ans
