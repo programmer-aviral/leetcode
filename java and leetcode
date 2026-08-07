@@ -1,0 +1,141 @@
+import java.util.*;
+
+class Solution {
+    private static final int[][] DIGIT_FACTORS = {
+        {0, 0, 0, 0}, // 0
+        {0, 0, 0, 0}, // 1
+        {1, 0, 0, 0}, // 2
+        {0, 1, 0, 0}, // 3
+        {2, 0, 0, 0}, // 4
+        {0, 0, 1, 0}, // 5
+        {1, 1, 0, 0}, // 6
+        {0, 0, 0, 1}, // 7
+        {3, 0, 0, 0}, // 8
+        {0, 2, 0, 0}  // 9
+    };
+
+    public String smallestNumber(String num, long t) {
+        int[] tFactors = new int[4];
+        long tempT = t;
+        int[] primes = {2, 3, 5, 7};
+        
+        for (int pIdx = 0; pIdx < 4; pIdx++) {
+            int p = primes[pIdx];
+            while (tempT % p == 0) {
+                tFactors[pIdx]++;
+                tempT /= p;
+            }
+        }
+        
+        if (tempT > 1) return "-1";
+
+        int n = num.length();
+        int firstZero = num.indexOf('0');
+        
+        // Check if num itself works
+        if (firstZero == -1) {
+            int[] currentFactors = new int[4];
+            for (int i = 0; i < n; i++) {
+                int d = num.charAt(i) - '0';
+                for (int k = 0; k < 4; k++) {
+                    currentFactors[k] += DIGIT_FACTORS[d][k];
+                }
+            }
+            if (isCovered(currentFactors, tFactors)) {
+                return num;
+            }
+        }
+
+        // Prefix matching
+        int[] prefixFactors = new int[4];
+        int limit = (firstZero == -1) ? n : firstZero + 1;
+        
+        for (int i = 0; i < limit; i++) {
+            int d = num.charAt(i) - '0';
+            for (int k = 0; k < 4; k++) {
+                prefixFactors[k] += DIGIT_FACTORS[d][k];
+            }
+        }
+
+        for (int i = limit - 1; i >= 0; i--) {
+            int currentDigit = num.charAt(i) - '0';
+            for (int k = 0; k < 4; k++) {
+                prefixFactors[k] -= DIGIT_FACTORS[currentDigit][k];
+            }
+
+            int availableSpaces = n - 1 - i;
+
+            for (int nextDigit = currentDigit + 1; nextDigit <= 9; nextDigit++) {
+                int[] reqFactors = new int[4];
+                for (int k = 0; k < 4; k++) {
+                    reqFactors[k] = Math.max(0, tFactors[k] - prefixFactors[k] - DIGIT_FACTORS[nextDigit][k]);
+                }
+
+                if (minDigitsNeeded(reqFactors) <= availableSpaces) {
+                    StringBuilder sb = new StringBuilder();
+                    sb.append(num, 0, i);
+                    sb.append(nextDigit);
+                    sb.append(buildSmallestSuffix(reqFactors, availableSpaces));
+                    return sb.toString();
+                }
+            }
+        }
+
+        // Expand length
+        int minLenForT = minDigitsNeeded(tFactors);
+        int newLen = Math.max(n + 1, minLenForT);
+        
+        return buildSmallestSuffix(tFactors, newLen);
+    }
+
+    private boolean isCovered(int[] a, int[] b) {
+        for (int i = 0; i < 4; i++) {
+            if (a[i] < b[i]) return false;
+        }
+        return true;
+    }
+
+    // Minimum number of digits required to provide factor counts [2, 3, 5, 7]
+    private int minDigitsNeeded(int[] factors) {
+        int c2 = factors[0], c3 = factors[1], c5 = factors[2], c7 = factors[3];
+        // Greedily bundle factors into 8s, 9s, 4s, 6s
+        int num8 = c2 / 3;
+        int rem2 = c2 % 3;
+        int num9 = c3 / 2;
+        int rem3 = c3 % 2;
+        int num4 = rem2 / 2;
+        rem2 %= 2;
+
+        int num6 = 0;
+        if (rem2 == 1 && rem3 == 1) {
+            num6 = 1;
+            rem2 = 0;
+            rem3 = 0;
+        }
+
+        return num8 + num9 + num4 + num6 + rem2 + rem3 + c5 + c7;
+    }
+
+    // Lexicographically fill suffix of exact length 'len'
+    private String buildSmallestSuffix(int[] reqFactors, int len) {
+        int[] factors = reqFactors.clone();
+        StringBuilder sb = new StringBuilder();
+
+        for (int pos = 0; pos < len; pos++) {
+            int remSpaces = len - 1 - pos;
+            for (int d = 1; d <= 9; d++) {
+                int[] nextFactors = new int[4];
+                for (int k = 0; k < 4; k++) {
+                    nextFactors[k] = Math.max(0, factors[k] - DIGIT_FACTORS[d][k]);
+                }
+
+                if (minDigitsNeeded(nextFactors) <= remSpaces) {
+                    sb.append(d);
+                    factors = nextFactors;
+                    break;
+                }
+            }
+        }
+        return sb.toString();
+    }
+}
