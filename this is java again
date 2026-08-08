@@ -1,0 +1,62 @@
+import java.util.*;
+
+class Solution {
+    public int[] validSequence(String word1, String word2) {
+        int n = word1.length();
+        int m = word2.length();
+
+        // suffix[i] = minimum index in word1 from which
+        // word2[i...] can be matched exactly.
+        int[] suffix = new int[m];
+
+        Arrays.fill(suffix, -1);
+
+        int j = m - 1;
+
+        for (int i = n - 1; i >= 0 && j >= 0; i--) {
+            if (word1.charAt(i) == word2.charAt(j)) {
+                suffix[j] = i;
+                j--;
+            }
+        }
+
+        // If word2 cannot be matched even with one change,
+        // we will handle it while constructing the answer.
+        
+        int[] answer = new int[m];
+
+        int pos = 0;
+        boolean changed = false;
+
+        for (int i = 0; i < n && pos < m; i++) {
+
+            // Case 1: Characters already match.
+            if (word1.charAt(i) == word2.charAt(pos)) {
+                answer[pos] = i;
+                pos++;
+            }
+
+            // Case 2: Use our one allowed modification.
+            else if (!changed) {
+
+                // We can change word1[i] to word2[pos].
+                // After using this change, the remaining
+                // word2[pos+1...] must match exactly.
+                if (pos + 1 == m ||
+                    (suffix[pos + 1] != -1 && suffix[pos + 1] > i)) {
+
+                    answer[pos] = i;
+                    pos++;
+                    changed = true;
+                }
+            }
+        }
+
+        // If all characters were matched, valid.
+        if (pos == m) {
+            return answer;
+        }
+
+        return new int[0];
+    }
+}
