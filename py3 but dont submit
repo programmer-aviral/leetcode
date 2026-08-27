@@ -1,0 +1,78 @@
+class Solution:
+    def lexGreaterPermutation(self, s: str, target: str) -> str:
+        n = len(s)
+
+        # Count characters in s
+        count = [0] * 26
+
+        for c in s:
+            count[ord(c) - ord('a')] += 1
+
+        ans = [''] * n
+        matched = 0
+
+        # Match target from left to right
+        for i in range(n):
+            c = ord(target[i]) - ord('a')
+
+            if count[c] == 0:
+                break
+
+            ans[i] = target[i]
+            count[c] -= 1
+            matched += 1
+
+        # If matching stopped before the end,
+        # try to put a greater character at that position
+        if matched < n:
+            greater = self.findGreater(count, target[matched])
+
+            if greater != -1:
+                result = target[:matched]
+                result += chr(ord('a') + greater)
+
+                count[greater] -= 1
+                result += self.appendRemaining(count)
+
+                return result
+
+        # Backtrack through matched positions
+        start = min(matched, n - 1)
+
+        for i in range(start, -1, -1):
+
+            # Restore character used at position i
+            count[ord(ans[i]) - ord('a')] += 1
+
+            greater = self.findGreater(count, target[i])
+
+            if greater != -1:
+                result = target[:i]
+
+                # Add smallest greater character
+                result += chr(ord('a') + greater)
+                count[greater] -= 1
+
+                # Add remaining characters in sorted order
+                result += self.appendRemaining(count)
+
+                return result
+
+        return ""
+
+    def findGreater(self, count, target_char):
+        start = ord(target_char) - ord('a') + 1
+
+        for i in range(start, 26):
+            if count[i] > 0:
+                return i
+
+        return -1
+
+    def appendRemaining(self, count):
+        result = []
+
+        for i in range(26):
+            result.extend(chr(ord('a') + i) * count[i])
+
+        return ''.join(result)
